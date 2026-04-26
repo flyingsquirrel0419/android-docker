@@ -2,6 +2,11 @@ name: "KVM Test"
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Android version to test (9, 11, 13, or all)"
+        required: false
+        default: "all"
   push:
     branches: [main]
     paths:
@@ -12,11 +17,42 @@ concurrency:
   group: kvm-test
   cancel-in-progress: true
 
+env:
+  ANDROID9_URLS: "https://osdn.net/dl/android-x86/android-x86_64-9.0-r2.iso https://downloads.sourceforge.net/project/android-x86/Release%209.0/android-x86_64-9.0-r2.iso"
+  ANDROID11_URLS: "https://downloads.sourceforge.net/project/blissos-x86/Official/BlissOS14/OpenGApps/Generic/Bliss-v14.10.3-x86_64-OFFICIAL-opengapps-20241012.iso"
+  ANDROID13_URLS: "https://downloads.sourceforge.net/project/blissos-x86/Official/BlissOS16/Gapps/Generic/Bliss-v16.9.7-x86_64-OFFICIAL-gapps-20241011.iso"
+
 jobs:
-  test:
-    name: KVM Boot Test
+  prepare:
+    name: Prepare
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      -
+        id: set
+        run: |
+          VER="${{ github.event.inputs.version || 'all' }}"
+          if [ "$VER" = "all" ]; then
+            echo 'matrix=[{"version":"9","name":"Android 9 (Pie)"},{"version":"11","name":"BlissOS 14 (Android 11)"},{"version":"13","name":"BlissOS 16 (Android 13)"}]' >> "$GITHUB_OUTPUT"
+          else
+            case "$VER" in
+              9)  echo 'matrix=[{"version":"9","name":"Android 9 (Pie)"}]' >> "$GITHUB_OUTPUT" ;;
+              11) echo 'matrix=[{"version":"11","name":"BlissOS 14 (Android 11)"}]' >> "$GITHUB_OUTPUT" ;;
+              13) echo 'matrix=[{"version":"13","name":"BlissOS 16 (Android 13)"}]' >> "$GITHUB_OUTPUT" ;;
+              *)  echo 'matrix=[{"version":"9","name":"Android 9 (Pie)"}]' >> "$GITHUB_OUTPUT" ;;
+            esac
+          fi
+
+  test:
+    name: ${{ matrix.name }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
       -
         name: Enable KVM
@@ -35,16 +71,23 @@ jobs:
         run: docker build -t android-test .
 
       -
+        name: Install ADB
+        run: sudo apt-get update && sudo apt-get install -y android-sdk-platform-tools
+
+      -
         name: Download Android ISO
         run: |
-          ISO_URLS=(
-            "https://osdn.net/dl/android-x86/android-x86_64-9.0-r2.iso"
-            "https://downloads.sourceforge.net/project/android-x86/Release%209.0/android-x86_64-9.0-r2.iso"
-          )
-          for url in "${ISO_URLS[@]}"; do
+          VER="${{ matrix.version }}"
+          case "$VER" in
+            9)  URLS=$ANDROID9_URLS ;;
+            11) URLS=$ANDROID11_URLS ;;
+            13) URLS=$ANDROID13_URLS ;;
+          esac
+
+          for url in $URLS; do
             echo "Trying: $url"
             if curl -L -o /tmp/android.iso -Ss --fail \
-                 --max-time 600 --connect-timeout 30 \
+                 --max-time 900 --connect-timeout 30 \
                  --retry 3 --retry-delay 10 "$url"; then
               if [ -s /tmp/android.iso ]; then
                 echo "✅ Downloaded $(du -h /tmp/android.iso | cut -f1)"
@@ -54,6 +97,7 @@ jobs:
             echo "Failed, trying next..."
             rm -f /tmp/android.iso
           done
+
           if [ ! -s /tmp/android.iso ]; then
             echo "❌ All download URLs failed"
             exit 1
@@ -102,18 +146,18 @@ jobs:
           done
 
       -
-        name: Wait for ISO download and boot
+        name: Wait for Android boot
         run: |
           for i in $(seq 1 600); do
             if ! docker ps --filter name=android --format '{{.Names}}' | grep -q android; then
-              echo "❌ Container died during ISO download/boot!"
+              echo "❌ Container died during boot!"
               docker logs android 2>&1 | tail -50
               exit 1
             fi
 
             LOGS=$(docker logs android 2>&1)
             if echo "$LOGS" | grep -q "started successfully"; then
-              echo "✅ Android booted successfully after ${i}s"
+              echo "✅ Android booted after ${i}s"
               break
             fi
             if echo "$LOGS" | grep -q "Failed to download ISO"; then
@@ -122,7 +166,7 @@ jobs:
               exit 1
             fi
             if [ $i -eq 600 ]; then
-              echo "❌ Timeout waiting for ISO (600s)"
+              echo "❌ Timeout waiting for boot (600s)"
               docker logs android 2>&1 | tail -50
               exit 1
             fi
@@ -130,23 +174,33 @@ jobs:
           done
 
       -
-        name: Wait for QEMU boot
+        name: Wait for Android UI ready
         run: |
-          for i in $(seq 1 60); do
-            LOGS=$(docker logs android 2>&1)
-            if echo "$LOGS" | grep -q "QEMU has started"; then
-              echo "✅ QEMU started after ${i}s"
-              break
+          echo "Waiting for Android to fully initialize..."
+          sleep 30
+
+      -
+        name: Test ADB connection
+        run: |
+          echo "Testing ADB on port 5555..."
+          for i in $(seq 1 30); do
+            if adb connect localhost:5555 2>/dev/null; then
+              sleep 2
+              RESULT=$(adb -s localhost:5555 shell echo "ADB_OK" 2>/dev/null)
+              if echo "$RESULT" | grep -q "ADB_OK"; then
+                echo "✅ ADB connected and responsive after ${i}s"
+                echo "--- Device info ---"
+                adb -s localhost:5555 shell getprop ro.product.model 2>/dev/null || true
+                adb -s localhost:5555 shell getprop ro.build.version.release 2>/dev/null || true
+                adb -s localhost:5555 shell getprop ro.product.cpu.abi 2>/dev/null || true
+                break
+              fi
+              adb disconnect localhost:5555 2>/dev/null || true
             fi
-            if ! docker ps --filter name=android --format '{{.Names}}' | grep -q android; then
-              echo "❌ Container died before QEMU boot!"
-              docker logs android 2>&1 | tail -50
-              exit 1
+            if [ $i -eq 30 ]; then
+              echo "⚠️ ADB connection failed after 30s (may need Android debugging enabled)"
             fi
-            if [ $i -eq 60 ]; then
-              echo "⚠️ QEMU start not detected after 60s, showing logs..."
-            fi
-            sleep 1
+            sleep 2
           done
 
       -
@@ -158,6 +212,7 @@ jobs:
         name: Cleanup
         if: always()
         run: |
+          adb disconnect localhost:5555 2>/dev/null || true
           docker stop android -t 10 2>/dev/null || true
           docker rm android 2>/dev/null || true
           docker volume rm android-storage 2>/dev/null || true
