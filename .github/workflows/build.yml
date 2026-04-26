@@ -86,6 +86,7 @@ jobs:
       -
         name: Increment version variable
         if: steps.docker_login.outcome == 'success'
+        continue-on-error: true
         uses: action-pack/bump@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
