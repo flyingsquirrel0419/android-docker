@@ -43,7 +43,7 @@ jobs:
           labels: |
             org.opencontainers.image.title=dockurr/android
         env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
