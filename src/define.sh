@@ -34,7 +34,7 @@ parseVersion() {
       INTERNAL_ID="bliss14"
       ISO_NAME="Bliss-v14.10.3-x86_64-OFFICIAL-opengapps-20241012.iso"
       ISO_URL="https://downloads.sourceforge.net/project/blissos-x86/Official/BlissOS14/OpenGApps/Generic/Bliss-v14.10.3-x86_64-OFFICIAL-opengapps-20241012.iso"
-      ISO_MIRRORS="https://sourceforge.net/projects/blissos-x86/files/Official/BlissOS14/OpenGApps/Generic/Bliss-v14.10.3-x86_64-OFFICIAL-opengapps-20241012.iso/download"
+      ISO_MIRRORS=""
       ISO_SUM=""
       SUM_TYPE=""
       ;;
@@ -43,7 +43,7 @@ parseVersion() {
       INTERNAL_ID="bliss16"
       ISO_NAME="Bliss-v16.9.7-x86_64-OFFICIAL-gapps-20241011.iso"
       ISO_URL="https://downloads.sourceforge.net/project/blissos-x86/Official/BlissOS16/Gapps/Generic/Bliss-v16.9.7-x86_64-OFFICIAL-gapps-20241011.iso"
-      ISO_MIRRORS="https://sourceforge.net/projects/blissos-x86/files/Official/BlissOS16/Gapps/Generic/Bliss-v16.9.7-x86_64-OFFICIAL-gapps-20241011.iso/download"
+      ISO_MIRRORS=""
       ISO_SUM=""
       SUM_TYPE=""
       ;;
