@@ -1,0 +1,4 @@
+storage/
+*.qcow2
+*.iso
+*.tmp

@@ -1,0 +1,120 @@
+name: "KVM Test"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+
+concurrency:
+  group: kvm-test
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: KVM Boot Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      -
+        name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+
+      -
+        name: Build Docker image
+        run: docker build -t android-test .
+
+      -
+        name: Run Android container
+        run: |
+          docker run -d \
+            --name android \
+            --device /dev/kvm \
+            --cap-add NET_ADMIN \
+            -p 8006:8006 \
+            -p 5555:5555 \
+            -e VERSION="9" \
+            -e RAM_SIZE="4G" \
+            -v android-storage:/storage \
+            android-test
+
+      -
+        name: Wait for container boot
+        run: |
+          echo "Waiting for container to start..."
+          for i in $(seq 1 60); do
+            if docker logs android 2>&1 | grep -q "QEMU has started"; then
+              echo "✅ QEMU started after ${i}s"
+              break
+            fi
+            if [ $i -eq 60 ]; then
+              echo "⚠️ Timeout waiting for QEMU (60s), continuing anyway..."
+            fi
+            sleep 1
+          done
+
+      -
+        name: Test noVNC (port 8006)
+        run: |
+          echo "Testing noVNC on port 8006..."
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8006/ 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ noVNC responding with HTTP 200 after ${i}s"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ noVNC not responding after 30s (last status: $STATUS)"
+              exit 1
+            fi
+            sleep 1
+          done
+
+      -
+        name: Wait for ISO download
+        run: |
+          echo "Waiting for ISO download to complete..."
+          for i in $(seq 1 120); do
+            LOGS=$(docker logs android 2>&1)
+            if echo "$LOGS" | grep -q "booting"; then
+              echo "✅ Android ISO downloaded, QEMU booting after ${i}s"
+              break
+            fi
+            if echo "$LOGS" | grep -q "Download failed"; then
+              echo "❌ ISO download failed!"
+              echo "$LOGS"
+              exit 1
+            fi
+            if [ $i -eq 120 ]; then
+              echo "⚠️ Still downloading after 120s, showing progress..."
+            fi
+            sleep 1
+          done
+
+      -
+        name: Show container logs
+        if: always()
+        run: docker logs android 2>&1 | tail -100
+
+      -
+        name: Show QEMU process
+        if: always()
+        run: docker exec android ps aux 2>/dev/null || echo "Container not accessible"
+
+      -
+        name: Cleanup
+        if: always()
+        run: |
+          docker stop android -t 10 2>/dev/null || true
+          docker rm android 2>/dev/null || true
+          docker volume rm android-storage 2>/dev/null || true
