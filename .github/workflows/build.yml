@@ -49,8 +49,9 @@ jobs:
         uses: docker/setup-buildx-action@v3
       -
         name: Login into Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME }}
+        id: docker_login
         uses: docker/login-action@v3
+        continue-on-error: true
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -62,12 +63,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       -
-        name: Build and push Docker image
-        if: ${{ secrets.DOCKERHUB_USERNAME }}
+        name: Build Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
+          push: ${{ steps.docker_login.outcome == 'success' }}
+          load: ${{ steps.docker_login.outcome != 'success' }}
           provenance: false
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
@@ -76,19 +77,8 @@ jobs:
           build-args: |
             VERSION_ARG=${{ steps.meta.outputs.version }}
       -
-        name: Build Docker image (no push)
-        if: ${{ !secrets.DOCKERHUB_USERNAME }}
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: false
-          load: true
-          tags: dockurr/android:latest
-          build-args: |
-            VERSION_ARG=${{ steps.meta.outputs.version }}
-      -
         name: Create a release
-        if: ${{ secrets.DOCKERHUB_USERNAME }}
+        if: steps.docker_login.outcome == 'success'
         uses: action-pack/github-release@v2
         with:
           tag: "v${{ steps.meta.outputs.version }}"
@@ -96,14 +86,17 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Increment version variable
-        if: ${{ secrets.DOCKERHUB_USERNAME }}
+        if: steps.docker_login.outcome == 'success'
         uses: action-pack/bump@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Send Discord notification
-        if: ${{ always() && secrets.DISCORD_WEBHOOK }}
+        if: always()
         run: |
+          if [ -z "${{ secrets.DISCORD_WEBHOOK }}" ]; then
+            exit 0
+          fi
           STATUS="${{ job.status }}"
           curl -s -X POST "${{ secrets.DISCORD_WEBHOOK }}" \
             -H "Content-Type: application/json" \
