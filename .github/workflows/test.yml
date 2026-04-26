@@ -181,10 +181,11 @@ jobs:
 
       -
         name: Test ADB connection
+        continue-on-error: true
         run: |
           echo "Testing ADB on port 5555..."
           for i in $(seq 1 30); do
-            if adb connect localhost:5555 2>/dev/null; then
+            if adb connect localhost:5555 2>&1 | grep -q "connected"; then
               sleep 2
               RESULT=$(adb -s localhost:5555 shell echo "ADB_OK" 2>/dev/null)
               if echo "$RESULT" | grep -q "ADB_OK"; then
@@ -193,15 +194,13 @@ jobs:
                 adb -s localhost:5555 shell getprop ro.product.model 2>/dev/null || true
                 adb -s localhost:5555 shell getprop ro.build.version.release 2>/dev/null || true
                 adb -s localhost:5555 shell getprop ro.product.cpu.abi 2>/dev/null || true
-                break
+                exit 0
               fi
               adb disconnect localhost:5555 2>/dev/null || true
             fi
-            if [ $i -eq 30 ]; then
-              echo "⚠️ ADB connection failed after 30s (may need Android debugging enabled)"
-            fi
             sleep 2
           done
+          echo "::warning::ADB not available (android-x86 live boot needs manual TCP ADB setup)"
 
       -
         name: Show container logs
