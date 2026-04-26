@@ -177,7 +177,7 @@ jobs:
         name: Wait for Android UI ready
         run: |
           echo "Waiting for Android to fully initialize..."
-          sleep 30
+          sleep 10
 
       -
         name: Test ADB connection
@@ -185,7 +185,7 @@ jobs:
         run: |
           echo "Testing ADB on port 5555..."
           CONNECTED=false
-          for i in $(seq 1 30); do
+          for i in $(seq 1 5); do
             if adb connect localhost:5555 2>&1 | grep -q "connected"; then
               sleep 2
               RESULT=$(adb -s localhost:5555 shell echo "ADB_OK" 2>/dev/null || true)
