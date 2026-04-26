@@ -180,7 +180,7 @@ An added benefit of this approach is that you won't have to perform any port map
 
 ### Is this project legal?
 
-Yes, this project contains only open-source code and does not distribute any copyrighted material. The Android images used are based on AOSP (Android Open Source Project), which is licensed under the Apache 2.0 license. The builds are provided by the [Android-x86](https://www.android-x86.org/) and [BlissOS](https://blissos.org/) projects. No Google Play Services or GApps are included by default.
+Yes, this project contains only open-source code and does not distribute any copyrighted material. The Android images used are based on AOSP (Android Open Source Project), which is licensed under the Apache 2.0 license. The builds are provided by the [Android-x86](https://www.android-x86.org/) and [BlissOS](https://blissos.org/) projects. Android 9 does not include Google Apps, while BlissOS 11 and 13 images come with OpenGApps pre-installed.
 
 ### How do I reset Android?
 
@@ -188,7 +188,7 @@ If you want to start fresh, simply delete the virtual disk and restart the conta
 
 ```bash
 docker compose down
-rm -rf ./storage/android.qcow2
+rm -rf ./storage/android.qcow2 ./storage/android.img
 docker compose up -d
 ```
 

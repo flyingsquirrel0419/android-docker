@@ -32,5 +32,6 @@ ENV VERSION="11"
 ENV RAM_SIZE="4G"
 ENV CPU_CORES="2"
 ENV DISK_SIZE="16G"
+ENV DISK_NAME="android"
 
 ENTRYPOINT ["/usr/bin/tini", "-s", "/run/entry.sh"]
