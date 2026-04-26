@@ -4,6 +4,7 @@ set -Eeuo pipefail
 : "${VERSION:=""}"
 
 ISO_URL=""
+ISO_MIRRORS=""
 ISO_NAME=""
 ISO_SUM=""
 SUM_TYPE=""
@@ -24,6 +25,7 @@ parseVersion() {
       INTERNAL_ID="android9"
       ISO_NAME="android-x86_64-9.0-r2.iso"
       ISO_URL="https://downloads.sourceforge.net/project/android-x86/Release%209.0/android-x86_64-9.0-r2.iso"
+      ISO_MIRRORS="https://sourceforge.net/projects/android-x86/files/Release%209.0/android-x86_64-9.0-r2.iso/download"
       ISO_SUM="1cc85b5ed7c830ff71aecf8405c7281a9c995aa0"
       SUM_TYPE="sha1"
       ;;
@@ -32,6 +34,7 @@ parseVersion() {
       INTERNAL_ID="bliss14"
       ISO_NAME="Bliss-v14.10.3-x86_64-OFFICIAL-opengapps-20241012.iso"
       ISO_URL="https://downloads.sourceforge.net/project/blissos-x86/Official/BlissOS14/OpenGApps/Generic/Bliss-v14.10.3-x86_64-OFFICIAL-opengapps-20241012.iso"
+      ISO_MIRRORS="https://sourceforge.net/projects/blissos-x86/files/Official/BlissOS14/OpenGApps/Generic/Bliss-v14.10.3-x86_64-OFFICIAL-opengapps-20241012.iso/download"
       ISO_SUM=""
       SUM_TYPE=""
       ;;
@@ -40,6 +43,7 @@ parseVersion() {
       INTERNAL_ID="bliss16"
       ISO_NAME="Bliss-v16.9.7-x86_64-OFFICIAL-gapps-20241011.iso"
       ISO_URL="https://downloads.sourceforge.net/project/blissos-x86/Official/BlissOS16/Gapps/Generic/Bliss-v16.9.7-x86_64-OFFICIAL-gapps-20241011.iso"
+      ISO_MIRRORS="https://sourceforge.net/projects/blissos-x86/files/Official/BlissOS16/Gapps/Generic/Bliss-v16.9.7-x86_64-OFFICIAL-gapps-20241011.iso/download"
       ISO_SUM=""
       SUM_TYPE=""
       ;;

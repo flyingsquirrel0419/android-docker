@@ -30,21 +30,39 @@ downloadISO() {
   local tmp="${dest}.tmp"
   rm -f "$tmp"
 
-  /run/progress.sh "$tmp" "0" "$msg ([P])..." &
-
-  if ! curl -L -o "$tmp" -Ss --fail --proto =https --max-time 7200 --connect-timeout 30 \
-       --retry 3 --retry-delay 10 "$url"; then
-    fKill "progress.sh"
-    rm -f "$tmp"
-    error "Failed to download ISO from $url"
-    return 1
+  local -a urls=("$url")
+  if [ -n "${ISO_MIRRORS:-}" ]; then
+    local IFS='|'
+    read -ra MIRROR_ARR <<< "$ISO_MIRRORS"
+    urls+=("${MIRROR_ARR[@]}")
   fi
 
-  fKill "progress.sh"
+  local success=false
 
-  if [ ! -s "$tmp" ]; then
+  for try_url in "${urls[@]}"; do
+    info "Trying: $try_url"
     rm -f "$tmp"
-    error "Downloaded ISO is empty"
+    /run/progress.sh "$tmp" "0" "$msg ([P])..." &
+
+    if curl -L -o "$tmp" -Ss --fail --proto =https \
+         --max-time 7200 --connect-timeout 60 \
+         --retry 5 --retry-delay 30 --retry-all-errors "$try_url"; then
+      fKill "progress.sh"
+      if [ -s "$tmp" ]; then
+        success=true
+        break
+      fi
+      warn "Downloaded file is empty, trying next URL..."
+    else
+      fKill "progress.sh"
+      warn "Download failed from: $try_url"
+    fi
+    rm -f "$tmp"
+  done
+
+  if [ "$success" = false ]; then
+    rm -f "$tmp"
+    error "Failed to download ISO from all URLs"
     return 1
   fi
 

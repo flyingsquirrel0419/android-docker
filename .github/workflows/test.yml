@@ -49,24 +49,19 @@ jobs:
             android-test
 
       -
-        name: Wait for container boot
+        name: Check container is alive
         run: |
-          echo "Waiting for container to start..."
-          for i in $(seq 1 60); do
-            if docker logs android 2>&1 | grep -q "QEMU has started"; then
-              echo "✅ QEMU started after ${i}s"
-              break
-            fi
-            if [ $i -eq 60 ]; then
-              echo "⚠️ Timeout waiting for QEMU (60s), continuing anyway..."
-            fi
-            sleep 1
-          done
+          sleep 5
+          if ! docker ps --filter name=android --format '{{.Names}}' | grep -q android; then
+            echo "❌ Container exited unexpectedly!"
+            docker logs android 2>&1
+            exit 1
+          fi
+          echo "✅ Container is running"
 
       -
         name: Test noVNC (port 8006)
         run: |
-          echo "Testing noVNC on port 8006..."
           for i in $(seq 1 30); do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8006/ 2>/dev/null || echo "000")
             if [ "$STATUS" = "200" ]; then
@@ -75,28 +70,56 @@ jobs:
             fi
             if [ $i -eq 30 ]; then
               echo "❌ noVNC not responding after 30s (last status: $STATUS)"
+              docker logs android 2>&1 | tail -30
               exit 1
             fi
             sleep 1
           done
 
       -
-        name: Wait for ISO download
+        name: Wait for ISO download and boot
         run: |
-          echo "Waiting for ISO download to complete..."
-          for i in $(seq 1 120); do
-            LOGS=$(docker logs android 2>&1)
-            if echo "$LOGS" | grep -q "booting"; then
-              echo "✅ Android ISO downloaded, QEMU booting after ${i}s"
-              break
-            fi
-            if echo "$LOGS" | grep -q "Download failed"; then
-              echo "❌ ISO download failed!"
-              echo "$LOGS"
+          for i in $(seq 1 300); do
+            if ! docker ps --filter name=android --format '{{.Names}}' | grep -q android; then
+              echo "❌ Container died during ISO download/boot!"
+              docker logs android 2>&1 | tail -50
               exit 1
             fi
-            if [ $i -eq 120 ]; then
-              echo "⚠️ Still downloading after 120s, showing progress..."
+
+            LOGS=$(docker logs android 2>&1)
+            if echo "$LOGS" | grep -q "Successfully prepared image"; then
+              echo "✅ ISO downloaded and prepared after ${i}s"
+              break
+            fi
+            if echo "$LOGS" | grep -q "Failed to download ISO"; then
+              echo "❌ ISO download failed!"
+              echo "$LOGS" | tail -30
+              exit 1
+            fi
+            if [ $i -eq 300 ]; then
+              echo "❌ Timeout waiting for ISO (300s)"
+              docker logs android 2>&1 | tail -50
+              exit 1
+            fi
+            sleep 1
+          done
+
+      -
+        name: Wait for QEMU boot
+        run: |
+          for i in $(seq 1 60); do
+            LOGS=$(docker logs android 2>&1)
+            if echo "$LOGS" | grep -q "QEMU has started"; then
+              echo "✅ QEMU started after ${i}s"
+              break
+            fi
+            if ! docker ps --filter name=android --format '{{.Names}}' | grep -q android; then
+              echo "❌ Container died before QEMU boot!"
+              docker logs android 2>&1 | tail -50
+              exit 1
+            fi
+            if [ $i -eq 60 ]; then
+              echo "⚠️ QEMU start not detected after 60s, showing logs..."
             fi
             sleep 1
           done
@@ -105,11 +128,6 @@ jobs:
         name: Show container logs
         if: always()
         run: docker logs android 2>&1 | tail -100
-
-      -
-        name: Show QEMU process
-        if: always()
-        run: docker exec android ps aux 2>/dev/null || echo "Container not accessible"
 
       -
         name: Cleanup
