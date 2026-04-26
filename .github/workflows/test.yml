@@ -35,6 +35,31 @@ jobs:
         run: docker build -t android-test .
 
       -
+        name: Download Android ISO
+        run: |
+          ISO_URLS=(
+            "https://osdn.net/dl/android-x86/android-x86_64-9.0-r2.iso"
+            "https://downloads.sourceforge.net/project/android-x86/Release%209.0/android-x86_64-9.0-r2.iso"
+          )
+          for url in "${ISO_URLS[@]}"; do
+            echo "Trying: $url"
+            if curl -L -o /tmp/android.iso -Ss --fail \
+                 --max-time 600 --connect-timeout 30 \
+                 --retry 3 --retry-delay 10 "$url"; then
+              if [ -s /tmp/android.iso ]; then
+                echo "✅ Downloaded $(du -h /tmp/android.iso | cut -f1)"
+                break
+              fi
+            fi
+            echo "Failed, trying next..."
+            rm -f /tmp/android.iso
+          done
+          if [ ! -s /tmp/android.iso ]; then
+            echo "❌ All download URLs failed"
+            exit 1
+          fi
+
+      -
         name: Run Android container
         run: |
           docker run -d \
@@ -43,9 +68,9 @@ jobs:
             --cap-add NET_ADMIN \
             -p 8006:8006 \
             -p 5555:5555 \
-            -e VERSION="9" \
             -e RAM_SIZE="4G" \
             -v android-storage:/storage \
+            -v /tmp/android.iso:/custom.iso \
             android-test
 
       -
