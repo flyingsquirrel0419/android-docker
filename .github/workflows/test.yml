@@ -112,8 +112,8 @@ jobs:
             fi
 
             LOGS=$(docker logs android 2>&1)
-            if echo "$LOGS" | grep -q "Successfully prepared image"; then
-              echo "✅ ISO downloaded and prepared after ${i}s"
+            if echo "$LOGS" | grep -q "started successfully"; then
+              echo "✅ Android booted successfully after ${i}s"
               break
             fi
             if echo "$LOGS" | grep -q "Failed to download ISO"; then
