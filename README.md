@@ -1,20 +1,34 @@
-# Android  
+# Android in Docker
 
-[![Build](https://github.com/dockur/android/actions/workflows/build.yml/badge.svg)](https://github.com/dockur/android/) [![Size](https://img.shields.io/docker/image-size/dockurr/android/latest?color=066da5&label=size)](https://hub.docker.com/r/dockurr/android/tags) [![Pulls](https://img.shields.io/docker/pulls/dockurr/android.svg?style=flat&label=pulls&logo=docker)](https://hub.docker.com/r/dockurr/android/)
+[![Build](https://github.com/dockur/android/actions/workflows/build.yml/badge.svg)](https://github.com/dockur/android/actions/workflows/build.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/dockurr/android.svg?style=flat&label=pulls&logo=docker)](https://hub.docker.com/r/dockurr/android/)
+[![Docker Image Size](https://img.shields.io/docker/image-size/dockurr/android/latest?color=066da5&label=size)](https://hub.docker.com/r/dockurr/android/tags)
+[![License](https://img.shields.io/github/license/dockur/android?color=blue)](LICENSE)
 
-Android inside a Docker container.
+Android inside a Docker container using QEMU/KVM, with a web-based viewer.
 
-## Features ✨
+## Features
 
-- Multiple Android versions (9, 11, 13)
-- KVM acceleration
-- Web-based viewer
-- ADB over TCP
-- Easy APK installation
+- **Multiple versions** — Android 9 (Pie), 11 (BlissOS), 13 (BlissOS 16)
+- **KVM acceleration** — near-native performance on supported hardware
+- **Web-based viewer** — access the Android screen from any browser via noVNC
+- **ADB over TCP** — connect via `adb connect` on port 5555
+- **One-command setup** — `docker compose up` and you're done
+- **OpenGApps included** — BlissOS 11 and 13 come with Google Apps pre-installed
 
-## Usage 🐳
+## Quick Start
 
-##### Via Docker Compose:
+```bash
+docker run -it --rm -p 8006:8006 --device=/dev/kvm dockurr/android
+```
+
+Then open [http://localhost:8006](http://localhost:8006) in your browser.
+
+## Usage
+
+### Docker Compose
+
+Create a `compose.yml`:
 
 ```yaml
 services:
@@ -22,148 +36,124 @@ services:
     image: dockurr/android
     container_name: android
     ports:
-      - 8006:8006
-      - 5555:5555
+      - 8006:8006  # noVNC web viewer
+      - 5555:5555  # ADB
     devices:
       - /dev/kvm
     volumes:
       - ./storage:/storage
+    environment:
+      VERSION: "11"
     restart: always
     stop_grace_period: 2m
 ```
 
-##### Via Docker CLI:
-
 ```bash
-docker run -it --rm --name android -p 8006:8006 -p 5555:5555 --device=/dev/kvm -v "${PWD:-.}/storage:/storage" --stop-timeout 120 dockurr/android
+docker compose up -d
 ```
 
-##### Via Kubernetes:
+### Docker CLI
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/dockur/android/refs/heads/master/kubernetes.yml
+docker run -d --name android \
+  -p 8006:8006 -p 5555:5555 \
+  --device=/dev/kvm \
+  -v "${PWD:-.}/storage:/storage" \
+  --stop-timeout 120 \
+  dockurr/android
 ```
 
-## FAQ 💬
+### Kubernetes
 
-### How do I use it?
+```bash
+kubectl apply -f https://raw.githubusercontent.com/dockur/android/refs/heads/main/kubernetes.yml
+```
 
-Very simple! These are the steps:
+## Configuration
 
-- Start the container and connect to [port 8006](http://127.0.0.1:8006/) using your web browser.
-- Sit back and relax while the magic happens, the whole installation will be performed fully automatic.
-- Once you see the desktop, your Android installation is ready for use.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VERSION` | `11` | Android version: `9`, `11`, or `13` |
+| `RAM_SIZE` | `4G` | Memory allocated to the VM |
+| `CPU_CORES` | `2` | Number of CPU cores |
+| `DISK_SIZE` | `16G` | Virtual disk size |
+| `DISK_NAME` | `android` | Disk filename in `/storage` |
 
-Enjoy your brand new machine, and don't forget to star this repo!
+### Version Details
 
-### How do I select the Android version?
+| Value | Version | Source | GApps |
+|-------|---------|--------|-------|
+| `9` | Android 9 Pie | [android-x86](https://www.android-x86.org/) | No |
+| `11` | BlissOS 14 | [BlissOS](https://blissos.org/) | OpenGApps |
+| `13` | BlissOS 16 | [BlissOS](https://blissos.org/) | OpenGApps |
 
-By default, Android 11 will be installed. But you can add the `VERSION` environment variable to your compose file, in order to specify an alternative Android version to be downloaded:
+You can also pass a direct URL to any compatible ISO:
 
 ```yaml
 environment:
-  VERSION: "13"
+  VERSION: "https://example.com/custom-android.iso"
 ```
 
-Select from the values below:
+## FAQ
 
-| **Value** | **Version**              |
-|-----------|--------------------------|
-| `9`       | Android 9 Pie            |
-| `11`      | Android 11 (BlissOS)     |
-| `13`      | Android 13 (BlissOS 16)  |
+### How do I use it?
+
+1. Start the container.
+2. Open [http://localhost:8006](http://localhost:8006) in your browser.
+3. Wait for Android to boot — first run downloads the ISO (~1GB).
+4. Done.
 
 ### How do I connect via ADB?
-
-After the container has booted, you can connect from the host using the Android Debug Bridge:
 
 ```bash
 adb connect localhost:5555
 adb shell
 ```
 
-This gives you a full shell inside the Android system.
+ADB over TCP needs to be enabled in Android settings first: **Settings → Developer Options → USB Debugging**.
 
 ### How do I install APKs?
-
-You can install APKs from the host via ADB:
 
 ```bash
 adb connect localhost:5555
 adb install my-app.apk
 ```
 
-Or place APK files in the `/storage/apk/` directory inside the container, and they will be available for manual installation.
+Or place APK files in the `/storage/apk/` directory inside the container.
 
-### How do I change the size of the disk?
-
-To expand the default size of 16 GB, add the `DISK_SIZE` setting to your compose file and set it to your preferred capacity:
-
-```yaml
-environment:
-  DISK_SIZE: "32G"
-```
-
-### How do I change the amount of CPU or RAM?
-
-By default, Android will be allowed to use 2 CPU cores and 4 GB of RAM.
-
-If you want to adjust this, you can specify the desired amount using the following environment variables:
-
-```yaml
-environment:
-  RAM_SIZE: "8G"
-  CPU_CORES: "4"
-```
-
-### How do I verify if my system supports KVM?
-
-To check whether your system supports KVM, run the following command:
+### How do I check if KVM is available?
 
 ```bash
 ls -l /dev/kvm
 ```
 
-If the file exists, KVM is available on your system. KVM is strongly recommended for good performance.
+If the file doesn't exist, enable virtualization (`Intel VT-x` or `AMD SVM`) in your BIOS. Without KVM, performance will be significantly slower.
 
-You can also run these commands for a more detailed check:
+Cloud providers typically don't support nested virtualization. Use `privileged: true` in your compose file if you get permission errors.
+
+### How do I reset Android?
 
 ```bash
-sudo apt install cpu-checker
-sudo kvm-ok
+docker compose down
+rm -rf ./storage/android.qcow2 ./storage/android.img
+docker compose up -d
 ```
 
-If you receive an error from `kvm-ok` indicating that KVM cannot be used, please check whether:
+### How do I assign a dedicated IP?
 
-- the virtualization extensions (`Intel VT-x` or `AMD SVM`) are enabled in your BIOS.
-- you enabled "nested virtualization" if you are running the container inside a virtual machine.
-- you are not using a cloud provider, as most of them do not allow nested virtualization for their VPS's.
-
-If you did not receive any error from `kvm-ok` but the container still complains about a missing KVM device, it could help to add `privileged: true` to your compose file (or `sudo` to your `docker` command) to rule out any permission issue.
-
-### How do I assign an individual IP address to the container?
-
-By default, the container uses bridge networking, which shares the IP address with the host.
-
-If you want to assign an individual IP address to the container, you can create a macvlan network as follows:
+Create a macvlan network:
 
 ```bash
 docker network create -d macvlan \
     --subnet=192.168.0.0/24 \
     --gateway=192.168.0.1 \
-    --ip-range=192.168.0.100/28 \
     -o parent=eth0 vlan
 ```
-
-Be sure to modify these values to match your local subnet.
-
-Once you have created the network, change your compose file to look as follows:
 
 ```yaml
 services:
   android:
     container_name: android
-    # ..snip..
     networks:
       vlan:
         ipv4_address: 192.168.0.100
@@ -173,29 +163,20 @@ networks:
     external: true
 ```
 
-An added benefit of this approach is that you won't have to perform any port mapping anymore, since all ports will be exposed by default.
+All ports will be exposed without port mapping. Note that macvlan prevents host-container communication by design.
 
-> [!IMPORTANT]
-> This IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, you need to create a [second macvlan](https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/#host-access) as a workaround.
+## Ports
 
-### Is this project legal?
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8006` | HTTP | noVNC web viewer |
+| `5555` | TCP | ADB over network |
+| `5900` | VNC | Raw VNC (optional) |
 
-Yes, this project contains only open-source code and does not distribute any copyrighted material. The Android images used are based on AOSP (Android Open Source Project), which is licensed under the Apache 2.0 license. The builds are provided by the [Android-x86](https://www.android-x86.org/) and [BlissOS](https://blissos.org/) projects. Android 9 does not include Google Apps, while BlissOS 11 and 13 images come with OpenGApps pre-installed.
+## Contributing
 
-### How do I reset Android?
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Bug reports and pull requests are welcome at [GitHub Issues](https://github.com/dockur/android/issues).
 
-If you want to start fresh, simply delete the virtual disk and restart the container:
+## License
 
-```bash
-docker compose down
-rm -rf ./storage/android.qcow2 ./storage/android.img
-docker compose up -d
-```
-
-This will trigger a new installation on the next start.
-
-## Stars 🌟
-
-If you find this project useful, please consider giving it a star on GitHub. It helps others discover it and keeps the project going!
-
-[![Stars](https://img.shields.io/github/stars/dockur/android?style=social)](https://github.com/dockur/android/stargazers)
+Licensed under the [Apache License 2.0](LICENSE).
