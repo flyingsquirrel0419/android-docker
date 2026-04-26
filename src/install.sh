@@ -45,8 +45,8 @@ downloadISO() {
     /run/progress.sh "$tmp" "0" "$msg ([P])..." &
 
     if curl -L -o "$tmp" -Ss --fail --proto =https \
-         --max-time 7200 --connect-timeout 60 \
-         --retry 5 --retry-delay 30 --retry-all-errors "$try_url"; then
+         --max-time 7200 --connect-timeout 30 \
+         --retry 2 --retry-delay 10 --retry-all-errors "$try_url"; then
       fKill "progress.sh"
       if [ -s "$tmp" ]; then
         success=true

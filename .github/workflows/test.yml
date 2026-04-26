@@ -79,7 +79,7 @@ jobs:
       -
         name: Wait for ISO download and boot
         run: |
-          for i in $(seq 1 300); do
+          for i in $(seq 1 600); do
             if ! docker ps --filter name=android --format '{{.Names}}' | grep -q android; then
               echo "❌ Container died during ISO download/boot!"
               docker logs android 2>&1 | tail -50
@@ -96,8 +96,8 @@ jobs:
               echo "$LOGS" | tail -30
               exit 1
             fi
-            if [ $i -eq 300 ]; then
-              echo "❌ Timeout waiting for ISO (300s)"
+            if [ $i -eq 600 ]; then
+              echo "❌ Timeout waiting for ISO (600s)"
               docker logs android 2>&1 | tail -50
               exit 1
             fi
