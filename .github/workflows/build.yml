@@ -39,7 +39,7 @@ jobs:
             ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=latest,priority=100
-            type=raw,value=${{ vars.MAJOR }}.${{ vars.MINOR }}
+            type=raw,value=${{ vars.MAJOR || '1' }}.${{ vars.MINOR || '0' }}
           labels: |
             org.opencontainers.image.title=dockurr/android
         env:
