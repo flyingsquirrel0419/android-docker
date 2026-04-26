@@ -1,6 +1,6 @@
 services:
   android:
-    image: dockurr/android
+    image: flyingsquirrel0419/android
     container_name: android
     environment:
       VERSION: "11"

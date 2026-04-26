@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: android
-        image: dockurr/android
+        image: flyingsquirrel0419/android
         env:
         - name: VERSION
           value: "11"

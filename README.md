@@ -1,8 +1,8 @@
 # Android in Docker
 
 [![Build](https://github.com/dockur/android/actions/workflows/build.yml/badge.svg)](https://github.com/dockur/android/actions/workflows/build.yml)
-[![Docker Pulls](https://img.shields.io/docker/pulls/dockurr/android.svg?style=flat&label=pulls&logo=docker)](https://hub.docker.com/r/dockurr/android/)
-[![Docker Image Size](https://img.shields.io/docker/image-size/dockurr/android/latest?color=066da5&label=size)](https://hub.docker.com/r/dockurr/android/tags)
+[![Docker Pulls](https://img.shields.io/docker/pulls/flyingsquirrel0419/android.svg?style=flat&label=pulls&logo=docker)](https://hub.docker.com/r/flyingsquirrel0419/android/)
+[![Docker Image Size](https://img.shields.io/docker/image-size/flyingsquirrel0419/android/latest?color=066da5&label=size)](https://hub.docker.com/r/flyingsquirrel0419/android/tags)
 [![License](https://img.shields.io/github/license/dockur/android?color=blue)](LICENSE)
 
 Android inside a Docker container using QEMU/KVM, with a web-based viewer.
@@ -19,7 +19,7 @@ Android inside a Docker container using QEMU/KVM, with a web-based viewer.
 ## Quick Start
 
 ```bash
-docker run -it --rm -p 8006:8006 --device=/dev/kvm dockurr/android
+docker run -it --rm -p 8006:8006 --device=/dev/kvm flyingsquirrel0419/android
 ```
 
 Then open [http://localhost:8006](http://localhost:8006) in your browser.
@@ -33,7 +33,7 @@ Create a `compose.yml`:
 ```yaml
 services:
   android:
-    image: dockurr/android
+    image: flyingsquirrel0419/android
     container_name: android
     ports:
       - 8006:8006  # noVNC web viewer
@@ -60,7 +60,7 @@ docker run -d --name android \
   --device=/dev/kvm \
   -v "${PWD:-.}/storage:/storage" \
   --stop-timeout 120 \
-  dockurr/android
+  flyingsquirrel0419/android
 ```
 
 ### Kubernetes

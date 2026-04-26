@@ -35,13 +35,13 @@ jobs:
         with:
           context: git
           images: |
-            dockurr/android
+            flyingsquirrel0419/android
             ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=latest,priority=100
             type=raw,value=${{ vars.MAJOR || '1' }}.${{ vars.MINOR || '0' }}
           labels: |
-            org.opencontainers.image.title=dockurr/android
+            org.opencontainers.image.title=flyingsquirrel0419/android
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest
       -
