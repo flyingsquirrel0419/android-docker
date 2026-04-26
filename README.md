@@ -1,9 +1,9 @@
 # Android in Docker
 
-[![Build](https://github.com/dockur/android/actions/workflows/build.yml/badge.svg)](https://github.com/dockur/android/actions/workflows/build.yml)
+[![Build](https://github.com/flyingsquirrel0419/android-docker/actions/workflows/build.yml/badge.svg)](https://github.com/flyingsquirrel0419/android-docker/actions/workflows/build.yml)
 [![Docker Pulls](https://img.shields.io/docker/pulls/flyingsquirrel0419/android.svg?style=flat&label=pulls&logo=docker)](https://hub.docker.com/r/flyingsquirrel0419/android/)
 [![Docker Image Size](https://img.shields.io/docker/image-size/flyingsquirrel0419/android/latest?color=066da5&label=size)](https://hub.docker.com/r/flyingsquirrel0419/android/tags)
-[![License](https://img.shields.io/github/license/dockur/android?color=blue)](LICENSE)
+[![License](https://img.shields.io/github/license/flyingsquirrel0419/android-docker?color=blue)](LICENSE)
 
 Android inside a Docker container using QEMU/KVM, with a web-based viewer.
 
@@ -66,7 +66,7 @@ docker run -d --name android \
 ### Kubernetes
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/dockur/android/refs/heads/main/kubernetes.yml
+kubectl apply -f https://raw.githubusercontent.com/flyingsquirrel0419/android-docker/refs/heads/main/kubernetes.yml
 ```
 
 ## Configuration
@@ -175,7 +175,7 @@ All ports will be exposed without port mapping. Note that macvlan prevents host-
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Bug reports and pull requests are welcome at [GitHub Issues](https://github.com/dockur/android/issues).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Bug reports and pull requests are welcome at [GitHub Issues](https://github.com/flyingsquirrel0419/android-docker/issues).
 
 ## License
 

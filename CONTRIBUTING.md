@@ -1,10 +1,10 @@
-# Contributing to dockur/android
+# Contributing to flyingsquirrel0419/android-docker
 
 Thanks for your interest. This guide covers the basics of contributing to the project.
 
 ## Reporting Bugs
 
-Open a [GitHub Issue](https://github.com/dockur/android/issues/new) and include:
+Open a [GitHub Issue](https://github.com/flyingsquirrel0419/android-docker/issues/new) and include:
 
 - Docker version and host OS
 - Container logs (`docker compose logs`)

@@ -4,7 +4,7 @@ set -Eeuo pipefail
 : "${APP:="Android"}"
 : "${PLATFORM:="x64"}"
 : "${BOOT_MODE:="legacy"}"
-: "${SUPPORT:="https://github.com/dockur/android"}"
+: "${SUPPORT:="https://github.com/flyingsquirrel0419/android-docker"}"
 
 cd /run
 
