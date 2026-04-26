@@ -24,8 +24,8 @@ parseVersion() {
       VERSION="9.0"
       INTERNAL_ID="android9"
       ISO_NAME="android-x86_64-9.0-r2.iso"
-      ISO_URL="https://osdn.net/dl/android-x86/android-x86_64-9.0-r2.iso"
-      ISO_MIRRORS="https://downloads.sourceforge.net/project/android-x86/Release%209.0/android-x86_64-9.0-r2.iso|https://sourceforge.net/projects/android-x86/files/Release%209.0/android-x86_64-9.0-r2.iso/download"
+      ISO_URL="https://downloads.sourceforge.net/project/android-x86/Release%209.0/android-x86_64-9.0-r2.iso"
+      ISO_MIRRORS=""
       ISO_SUM="1cc85b5ed7c830ff71aecf8405c7281a9c995aa0"
       SUM_TYPE="sha1"
       ;;
